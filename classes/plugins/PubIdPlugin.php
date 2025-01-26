@@ -221,7 +221,7 @@ abstract class PubIdPlugin extends PKPPubIdPlugin
     /**
      * @copydoc PKPPubIdPlugin::checkDuplicate()
      */
-    public function checkDuplicate($pubId, $pubObject, int $contextId)
+    public function checkDuplicate($pubId, $pubObject, int $contextId): bool
     {
         $allowedPubObjectTypes = $this->getPubObjectTypes();
         if ($pubObject instanceof $allowedPubObjectTypes['Chapter']) {

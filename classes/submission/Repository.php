@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file classes/submission/Repository.php
  *
@@ -140,20 +141,24 @@ class Repository extends \PKP\submission\Repository
 
     protected function mapDashboardViews($types, Context $context, User $user, bool $canAccessUnassignedSubmission): Collection
     {
-        $views = parent::mapDashboardViews($types, $context, $user, $canAccessUnassignedSubmission);
+        $views = parent::mapDashboardViews($types, $context, $user, $canAccessUnassignedSubmission)
+            ->filter(function ($item) {
+                // Filter out entry for external & internal review. Both will be added below as a single view
+                return !$item || !in_array($item->getData()['id'], [DashboardView::TYPE_REVIEW_EXTERNAL, DashboardView::TYPE_REVIEW_INTERNAL]);
+            });
 
         $collector = Repo::submission()->getCollector()
             ->filterByContextIds([$context->getId()])
-            ->filterByStageIds([WORKFLOW_STAGE_ID_INTERNAL_REVIEW])
+            ->filterByStageIds([WORKFLOW_STAGE_ID_INTERNAL_REVIEW, WORKFLOW_STAGE_ID_EXTERNAL_REVIEW])
             ->filterByStatus([PKPSubmission::STATUS_QUEUED]);
 
-        return $views->put(DashboardView::TYPE_REVIEW_INTERNAL, new DashboardView(
-            DashboardView::TYPE_REVIEW_INTERNAL,
-            __('submission.dashboard.view.reviewInternal'),
+        return $views->put(DashboardView::TYPE_REVIEW_ALL_IN_REVIEW, new DashboardView(
+            DashboardView::TYPE_REVIEW_ALL_IN_REVIEW,
+            __('submission.dashboard.view.allInReviewStage'),
             [Role::ROLE_ID_SITE_ADMIN, Role::ROLE_ID_MANAGER, Role::ROLE_ID_SUB_EDITOR, Role::ROLE_ID_ASSISTANT],
             $canAccessUnassignedSubmission ? $collector : $collector->assignedTo([$user->getId()]),
             $canAccessUnassignedSubmission ? null : 'assigned',
-            ['stageIds' => [WORKFLOW_STAGE_ID_INTERNAL_REVIEW], 'status' => [PKPSubmission::STATUS_QUEUED]]
+            ['stageIds' => [WORKFLOW_STAGE_ID_INTERNAL_REVIEW, WORKFLOW_STAGE_ID_EXTERNAL_REVIEW], 'status' => [PKPSubmission::STATUS_QUEUED]]
         ));
     }
 }
